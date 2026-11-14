@@ -1,0 +1,4 @@
+__pycache__/
+web/assets/food101-trained.onnx
+web/assets/ort-wasm-simd-threaded.wasm
+web/products.tmp

@@ -1,0 +1,6 @@
+MobileNet V2 Food-101 classifier
+Author of the training checkpoint: AlexKoff88
+Source: https://huggingface.co/AlexKoff88/mobilenet_v2_food101
+License: Apache License 2.0 (food101-LICENSE.txt).
+This distribution uses the original MobileNet V2 ONNX graph with the learned
+checkpoint weights and folds the trained batch normalizations into convolutions.

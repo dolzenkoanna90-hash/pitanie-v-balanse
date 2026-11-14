@@ -1,0 +1,50 @@
+name: Publish Pitanie v balanse
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '24 3 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/configure-pages@v5
+      - name: Restore and verify photo runtime
+        run: |
+          for asset in food101-trained.onnx ort-wasm-simd-threaded.wasm; do
+            cat model-assets/"$asset".gz.part-* | gzip -d > web/assets/"$asset"
+          done
+          cd web/assets
+          sha256sum -c <<'SHA'
+          a3feb9e8deaf88171d254fe04154afab0b7dfa12d077756b0363465ebb3aafd5  food101-trained.onnx
+          71aef04959c5c1b6de461b6538e2058e306610034a85aad2742d0c7fd4533fe4  ort-wasm-simd-threaded.wasm
+          SHA
+      - name: Refresh Open Food Facts products
+        if: github.event_name != 'push'
+        run: |
+          if ! python3 scripts/update-catalog.py; then
+            echo "::error::The catalog refresh failed. The current published site will continue serving its catalog."
+            exit 1
+          fi
+      - name: Verify product catalog
+        run: python3 -c 'import json; assert len(json.load(open("web/products.json"))) >= 500'
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: web
+      - uses: actions/deploy-pages@v4
+        id: deployment
